@@ -1,0 +1,163 @@
+.result-container {
+    text-align: center;
+    padding: 2rem;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 900px; /* For desktop view */
+    width: 550px; /* Default width for larger screens */
+    margin: 4rem auto; /* Center the container */
+}
+
+.result-container h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    color: #333;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.result-container .logo-container {
+    margin: 1.5rem auto;
+}
+
+.result-container .logo-container .user-profile-pic {
+    width: 120px; /* Size for profile picture */
+    height: 120px;
+    display: block;
+    margin: 0 auto;
+    border-radius: 50%; /* Make the profile picture circular */
+    object-fit: cover; /* Ensure the image fits well inside the circular frame */
+    border: 3px solid #007bff; /* Slightly thicker blue border for better appearance */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add a subtle shadow for depth */
+}
+
+.result-container .logo-container .profile-default {
+    width: 120px; /* Same size as profile picture */
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border-radius: 50%; /* Make it circular */
+    background-color: #007bff; /* Blue background like navbar */
+    color: #fff; /* White text for the letter */
+    font-size: 48px; /* Large font size for the letter */
+    font-weight: bold;
+    border: 3px solid #007bff; /* Matching border */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add a subtle shadow for depth */
+}
+
+.result-details {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.result-details p {
+    font-size: clamp(0.9rem, 2vw, 1.2rem);
+    color: #555;
+    margin: 0.8rem 0;
+}
+
+.result-details span {
+    font-weight: bold;
+    color: #000;
+}
+
+.result-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.result-buttons button {
+    padding: 0.8rem 1.5rem;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: clamp(100px, 45%, 200px);
+}
+
+.result-buttons button:first-child {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.result-buttons button:first-child:hover {
+    background-color: #218838;
+}
+
+.result-buttons button:last-child {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.result-buttons button:last-child:hover {
+    background-color: #c82333;
+}
+
+/* Media Queries */
+@media (max-width: 500px) {
+    .result-container {
+        padding: 1rem; /* Reduced padding for mobile */
+        margin: 2rem auto; /* Adjusted margin for better centering */
+        width: 90%; /* Use percentage width for better responsiveness */
+        max-width: 350px; /* Reduced max-width for mobile */
+        box-sizing: border-box; /* Ensure padding is included in width */
+    }
+
+    .result-container h1 {
+        font-size: clamp(1.5rem, 3vw, 2rem); /* Smaller font size for mobile */
+    }
+
+    .result-container .logo-container .user-profile-pic,
+    .result-container .logo-container .profile-default {
+        width: 100px; /* Slightly smaller on mobile */
+        height: 100px;
+        font-size: 40px; /* Adjust font size for the letter */
+    }
+
+    .result-details {
+        padding: 1rem; /* Reduced padding for mobile */
+    }
+
+    .result-details p {
+        font-size: clamp(0.8rem, 1.8vw, 1rem); /* Smaller font size for mobile */
+    }
+
+    .result-buttons button {
+        padding: 0.6rem 1rem; /* Reduced padding for buttons */
+        font-size: clamp(0.7rem, 1.8vw, 0.9rem); /* Smaller font size for buttons */
+    }
+}
+
+@media (max-width: 480px) {
+    .result-container {
+        padding: 0.8rem; /* Further reduced padding for smaller screens */
+        margin: 1.5rem auto; /* Adjusted margin */
+        width: 300px; /* Ensure it takes 90% of the screen width */
+        max-width: 320px; /* Further reduced max-width for smaller screens */
+    }
+
+    .result-container .logo-container .user-profile-pic,
+    .result-container .logo-container .profile-default {
+        width: 80px; /* Even smaller on very small screens */
+        height: 80px;
+        font-size: 32px; /* Adjust font size for the letter */
+    }
+
+    .result-details {
+        padding: 0.8rem; /* Further reduced padding */
+    }
+
+    .result-buttons button {
+        padding: 0.5rem 0.8rem; /* Further reduced padding for buttons */
+    }
+}

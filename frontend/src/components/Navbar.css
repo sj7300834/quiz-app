@@ -1,0 +1,367 @@
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0; /* Removed horizontal padding to reduce space */
+  background-color: #007bff;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.navbar.hidden {
+  transform: translateY(-100%);
+}
+
+body {
+  padding-top: 60px; /* Adjust based on navbar height */
+}
+
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 100%; /* Removed max-width to use full width */
+  margin: 0;
+  padding: 0 10px; /* Added minimal padding for slight spacing */
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  margin-left: 0; /* Ensure no left margin */
+}
+
+.navbar-brand {
+  color: white;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+  margin-right: 20px; /* Space between Quiz App and links */
+  margin-left: 0; /* Ensure no left margin */
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 25px; /* Increased gap between links */
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px; /* Increased font size for Home, About, Contact */
+}
+
+.nav-links a:hover {
+  color: #ccc;
+}
+
+/* Profile Section */
+.profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin-right: 0; /* Remove right margin to align fully to the right */
+  cursor: pointer; /* Added cursor pointer on hover */
+}
+
+.profile-pic {
+  width: 16px; /* Further reduced size of profile icon to 16px */
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.profile-default {
+  width: 16px; /* Further reduced size of default profile icon to 16px */
+  height: 16px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px; /* Adjusted font size for smaller icon */
+  font-weight: bold;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.username-display {
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+}
+
+/* Dropdown Menu */
+.dropdown {
+  position: absolute;
+  top: 50px; /* Adjusted to account for smaller profile icon */
+  right: 0;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 1000;
+  width: 200px;
+}
+
+.dropdown p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #333; /* Ensure text is visible */
+}
+
+.dropdown a, .dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  text-align: center;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.dropdown a:hover, .dropdown button:not(.logout-button):hover {
+  background-color: #0056b3; /* Hover effect for non-logout buttons */
+}
+
+.dropdown .logout-button {
+  background-color: #dc3545 !important; /* Red color for logout button */
+}
+
+.dropdown .logout-button:hover {
+  background-color: #c82333 !important; /* Darker red on hover */
+}
+
+/* Auth Buttons */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 0; /* Ensure no right margin */
+}
+
+.login-button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #218838;
+}
+
+/* Auth Form */
+.auth-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.auth-form {
+  position: fixed;
+  top: 60px; /* Adjust this value to match navbar height */
+  right: 20px; /* Position form on the right side */
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  width: 300px;
+  display: none;
+}
+
+.auth-form.open {
+  display: block;
+}
+
+.drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #333;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-button {
+  padding: 10px;
+  background-color: #1670de;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form-button:hover {
+  background-color: #0056b3;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 14px;
+  margin: 0;
+}
+
+.auth-switch-text {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+  color: red; /* Red color for the text */
+}
+
+.auth-switch-link {
+  color: #007bff; /* Blue color for the link */
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-switch-link:hover {
+  text-decoration: none;
+}
+
+/* Mobile Menu Icon */
+.mobile-menu-icon {
+  display: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+  .nav-links {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      background-color: #007bff;
+      padding: 10px 0;
+      align-items: center;
+  }
+
+  .nav-links.open {
+      display: flex;
+  }
+
+  .mobile-menu-icon {
+      display: block;
+  }
+
+  .navbar-left {
+      flex-direction: column;
+      align-items: flex-start;
+      margin-left: 10px; /* Slight margin for mobile */
+  }
+
+  .navbar-brand {
+      margin-right: 0;
+      margin-bottom: 10px;
+      margin-left: 0;
+  }
+
+  .profile {
+      margin-right: 10px; /* Slight margin for mobile */
+  }
+
+  .auth-form {
+      top: 60px;
+      right: 10px;
+      width: 90%;
+      max-width: 300px;
+  }
+
+  .username-display {
+      font-size: 12px; /* Smaller font size for mobile */
+  }
+
+  .dropdown {
+      top: 70px; /* Adjusted for smaller profile icon in mobile view */
+      width: 150px;
+  }
+}
+
+/* Custom Popup Styling */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup {
+  background: #28a745; /* Green background for success */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.popup p {
+  font-size: 18px;
+  color: #fff; /* White text for better visibility */
+}
+
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+      transform: translateY(-20px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
