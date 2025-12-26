@@ -19,26 +19,36 @@ const App = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      setIsAuthenticated(true);
-      const fetchProfile = async () => {
-        try {
-          const response = await fetch("http://localhost:5000/api/auth/profile", {
+
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/auth/profile`,
+          {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          });
-          if (!response.ok) throw new Error("Failed to fetch profile");
-          const data = await response.json();
-          setUser(data);
-        } catch (err) {
-          console.error("Error fetching user profile:", err);
-          localStorage.removeItem("token");
-          setIsAuthenticated(false);
-        } finally {
-          setIsLoading(false);
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch profile");
         }
-      };
+
+        const data = await response.json();
+        setUser(data);
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+        localStorage.removeItem("token");
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (token) {
       fetchProfile();
     } else {
       setIsLoading(false);
@@ -65,6 +75,7 @@ const App = () => {
           showAuthForm={showAuthForm}
           setShowAuthForm={setShowAuthForm}
         />
+
         <Routes>
           <Route
             path="/"
@@ -78,6 +89,7 @@ const App = () => {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/contact-list" element={<ContactList />} />
+
           <Route
             path="/quiz/:quizType"
             element={
@@ -88,7 +100,9 @@ const App = () => {
               )
             }
           />
-          <Route path="/result" element={<Result user={user} />} /> {/* Added user prop */}
+
+          <Route path="/result" element={<Result user={user} />} />
+
           <Route
             path="/admin"
             element={
@@ -99,6 +113,7 @@ const App = () => {
               )
             }
           />
+
           <Route
             path="/profile"
             element={
@@ -109,6 +124,7 @@ const App = () => {
               )
             }
           />
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
