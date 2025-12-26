@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
-const API_URL = process.env.REACT_APP_API_URL; 
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function Navbar({
   isAuthenticated,
@@ -51,7 +51,7 @@ export default function Navbar({
         const data = await res.json();
         setUser(data);
         setIsAuthenticated(true);
-      } catch (err) {
+      } catch {
         localStorage.removeItem("token");
         setUser(null);
         setIsAuthenticated(false);
@@ -60,44 +60,6 @@ export default function Navbar({
 
     fetchProfile();
   }, [setIsAuthenticated, setUser]);
-
-  /* =========================
-     SCROLL NAVBAR
-  ========================== */
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowNavbar(window.scrollY < lastScrollY);
-      setLastScrollY(window.scrollY);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
-  /* =========================
-     OUTSIDE CLICK
-  ========================== */
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropdown(false);
-      }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
-        setIsMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  /* =========================
-     LOGOUT
-  ========================== */
-  const handleLogout = () => {
-    localStorage.clear();
-    setIsAuthenticated(false);
-    setUser(null);
-    navigate("/");
-  };
 
   /* =========================
      LOGIN / SIGNUP
@@ -127,6 +89,7 @@ export default function Navbar({
         setIsAuthenticated(true);
         setPopupMessage("Login Successful!");
         setShowAuthForm(false);
+        navigate("/");
       } else {
         setPopupMessage("Signup successful! Please login.");
         setIsLoginForm(true);
@@ -151,7 +114,11 @@ export default function Navbar({
           </Link>
 
           {isAuthenticated && user ? (
-            <div ref={dropdownRef} className="profile" onClick={() => setShowDropdown(!showDropdown)}>
+            <div
+              ref={dropdownRef}
+              className="profile"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
               <div className="profile-default">
                 {user.username[0].toUpperCase()}
               </div>
@@ -159,7 +126,15 @@ export default function Navbar({
                 <div className="dropdown">
                   <p>{user.username}</p>
                   <p>{user.email}</p>
-                  <button onClick={handleLogout}>Logout</button>
+                  <button
+                    onClick={() => {
+                      localStorage.clear();
+                      setUser(null);
+                      setIsAuthenticated(false);
+                    }}
+                  >
+                    Logout
+                  </button>
                 </div>
               )}
             </div>
@@ -178,18 +153,21 @@ export default function Navbar({
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           )}
           <input
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
           {error && <p className="error">{error}</p>}
           <button type="submit">
