@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './Contact.css';
+import React, { useState } from "react";
+import axios from "axios";
+import "./Contact.css";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
+    name: "",
+    email: "",
+    message: "",
   });
 
   const handleChange = (e) => {
@@ -15,13 +15,26 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await axios.post('http://localhost:5000/api/contact', formData); // Use full URL
-      alert(response.data.message); // Show success message
-      setFormData({ name: '', email: '', message: '' });
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/contact`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      alert(response.data.message || "Message sent successfully!");
+      setFormData({ name: "", email: "", message: "" });
     } catch (error) {
-      console.error('Error submitting form:', error); // Log the error
-      alert('Failed to send message. Please try again.');
+      console.error(
+        "Error submitting contact form:",
+        error.response?.data || error.message
+      );
+      alert("Failed to send message. Please try again.");
     }
   };
 
@@ -29,8 +42,10 @@ const Contact = () => {
     <div className="contact-container">
       <h2>Contact Us</h2>
       <p className="contact-description">
-        Have questions or feedback? Feel free to reach out to us! We'll get back to you as soon as possible.
+        Have questions or feedback? Feel free to reach out to us! We'll get back to
+        you as soon as possible.
       </p>
+
       <form className="contact-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Name:</label>
@@ -43,6 +58,7 @@ const Contact = () => {
             required
           />
         </div>
+
         <div className="form-group">
           <label>Email:</label>
           <input
@@ -54,6 +70,7 @@ const Contact = () => {
             required
           />
         </div>
+
         <div className="form-group">
           <label>Message:</label>
           <textarea
@@ -64,8 +81,12 @@ const Contact = () => {
             required
           />
         </div>
-        <button type="submit" className="submit-button">Send</button>
+
+        <button type="submit" className="submit-button">
+          Send
+        </button>
       </form>
+
       <div className="contact-info">
         <h3>Our Office</h3>
         <p>123 Quiz Street, Knowledge City</p>
