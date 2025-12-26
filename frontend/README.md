@@ -1,4 +1,4 @@
-# 🧠 QuizAppProject (MERN Stack)
+#  QuizAppProject (MERN Stack)
 
 QuizAppProject is a full-stack **Quiz Application** built using the **MERN stack**.  
 The application allows users to participate in quizzes across multiple subjects, track their performance, and view detailed results with time analysis.
@@ -7,7 +7,7 @@ This project is developed and maintained by a **single developer** and is primar
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Frontend
 - React.js
@@ -36,7 +36,7 @@ This project is developed and maintained by a **single developer** and is primar
 
 ---
 
-## ✨ Core Features
+##  Core Features
 
 - User authentication (Login / Register)
 - JWT-protected APIs
@@ -60,5 +60,4 @@ This project is developed and maintained by a **single developer** and is primar
 
 ---
 
-## 📁 Project Structure
 
