@@ -40,7 +40,7 @@ export default function Navbar({
       if (!token) return;
 
       try {
-        const res = await fetch(`${API_URL}/api/auth/me`, {
+        const res = await fetch(`${API_URL}/api/auth/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
