@@ -2,61 +2,112 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-const Navbar = ({
+export default function Navbar({
   isAuthenticated,
   setIsAuthenticated,
   user,
   setUser,
   showAuthForm,
   setShowAuthForm,
-}) => {
+}) {
   const navigate = useNavigate();
 
-  const [isLoginForm, setIsLoginForm] = useState(true);
+  const API_URL = process.env.REACT_APP_API_URL;
+
+  const [isLoginForm, setIsLoginForm] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const [showNavbar, setShowNavbar] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+
   const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   /* =========================
      FETCH USER PROFILE
   ========================== */
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const fetchUserProfile = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    const fetchProfile = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/auth/profile`, {
+        const response = await fetch(`${API_URL}/api/auth/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
-        if (!res.ok) throw new Error("Unauthorized");
+        if (!response.ok) throw new Error("Unauthorized");
 
-        const data = await res.json();
+        const data = await response.json();
         setUser(data);
         setIsAuthenticated(true);
       } catch (err) {
         localStorage.removeItem("token");
-        setUser(null);
         setIsAuthenticated(false);
+        setUser(null);
       }
     };
 
-    fetchProfile();
-  }, [setIsAuthenticated, setUser]);
+    fetchUserProfile();
+  }, [API_URL, setIsAuthenticated, setUser]);
+
+  /* =========================
+     NAVBAR SCROLL
+  ========================== */
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      setShowNavbar(currentScrollY <= lastScrollY);
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
+  /* =========================
+     OUTSIDE CLICK
+  ========================== */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /* =========================
+     LOGOUT
+  ========================== */
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsAuthenticated(false);
+    setUser(null);
+    navigate("/");
+  };
 
   /* =========================
      LOGIN / SIGNUP SUBMIT
   ========================== */
-  const handleSubmit = async (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -67,127 +118,166 @@ const Navbar = ({
         ? { email, password }
         : { username, email, password };
 
-      const res = await fetch(`${API_URL}/api/auth/${endpoint}`, {
+      const response = await fetch(`${API_URL}/api/auth/${endpoint}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || "Something went wrong");
+      if (!response.ok) {
+        setError(data.message || "Something went wrong");
+        return;
       }
 
       if (isLoginForm) {
         localStorage.setItem("token", data.token);
-        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
         setIsAuthenticated(true);
+        setUser(data.user);
+        setPopupMessage("Login Successful!");
         setShowAuthForm(false);
-        navigate("/");
+
+        setTimeout(() => {
+          setShowPopup(false);
+          navigate("/");
+        }, 1500);
       } else {
-        setIsLoginForm(true);
-        alert("Signup successful! Please login.");
+        setPopupMessage("Signup successful! Please login.");
+        setShowAuthForm(false);
+        setTimeout(() => {
+          setShowPopup(false);
+          setIsLoginForm(true);
+          setShowAuthForm(true);
+        }, 1500);
       }
+
+      setShowPopup(true);
     } catch (err) {
-      setError(err.message);
+      setError("Something went wrong. Please try again.");
     }
   };
 
   /* =========================
-     LOGOUT
+     JSX
   ========================== */
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setIsAuthenticated(false);
-    navigate("/");
-  };
-
   return (
-    <>
-      <nav className="navbar">
-        <Link to="/" className="logo">
-          Quiz App
-        </Link>
+    <div>
+      <nav className={`navbar ${showNavbar ? "visible" : "hidden"}`}>
+        <div className="navbar-container">
+          <div className="navbar-left">
+            <Link className="navbar-brand" to="/">
+              <h1>Quiz App</h1>
+            </Link>
 
-        {isAuthenticated && user ? (
-          <div
-            className="profile"
-            ref={dropdownRef}
-            onClick={() => setShowDropdown(!showDropdown)}
-          >
-            <div className="avatar">
-              {user.username.charAt(0).toUpperCase()}
+            <div
+              className={`nav-links ${isMobileMenuOpen ? "open" : ""}`}
+              ref={mobileMenuRef}
+            >
+              <Link to="/">Home</Link>
+              <Link to="/about">About</Link>
+              <Link to="/contact">Contact</Link>
             </div>
-
-            {showDropdown && (
-              <div className="dropdown">
-                <p>{user.username}</p>
-                <p>{user.email}</p>
-                <button onClick={handleLogout}>Logout</button>
-              </div>
-            )}
           </div>
-        ) : (
-          <button onClick={() => setShowAuthForm(true)}>
-            {isLoginForm ? "Login" : "Signup"}
-          </button>
-        )}
+
+          <div className="mobile-menu-icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            ☰
+          </div>
+
+          {isAuthenticated && user ? (
+            <div className="profile" ref={dropdownRef} onClick={() => setShowDropdown(!showDropdown)}>
+              {user.profilePicture ? (
+                <img src={user.profilePicture} alt="Profile" className="profile-pic" />
+              ) : (
+                <div className="profile-default">
+                  {user.username[0].toUpperCase()}
+                </div>
+              )}
+              <span className="username-display">{user.username}</span>
+
+              {showDropdown && (
+                <div className="dropdown">
+                  <p>{user.username}</p>
+                  <p>{user.email}</p>
+                  <Link to="/profile">Profile</Link>
+                  <button onClick={handleLogout}>Logout</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="auth-buttons">
+              <button
+                className="login-button"
+                onClick={() => {
+                  setIsLoginForm(!isLoginForm);
+                  setShowAuthForm(true);
+                }}
+              >
+                {isLoginForm ? "Signup" : "Login"}
+              </button>
+            </div>
+          )}
+        </div>
       </nav>
 
-      {showAuthForm && (
-        <div className="auth-modal">
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <h2>{isLoginForm ? "Login" : "Signup"}</h2>
+      {showAuthForm && <div className="auth-form-overlay" onClick={() => setShowAuthForm(false)} />}
 
-            {!isLoginForm && (
-              <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            )}
+      <div className={`auth-form ${showAuthForm ? "open" : ""}`}>
+        <form onSubmit={handleFormSubmit} className="drawer-form">
+          <h2>{isLoginForm ? "Login" : "Signup"}</h2>
 
+          {!isLoginForm && (
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
               required
             />
+          )}
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            required
+          />
 
-            {error && <p className="error">{error}</p>}
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            required
+          />
 
-            <button type="submit">
-              {isLoginForm ? "Login" : "Signup"}
-            </button>
+          {error && <p className="error-message">{error}</p>}
 
-            <p
-              className="switch"
+          <button type="submit" className="form-button">
+            {isLoginForm ? "Login" : "Signup"}
+          </button>
+
+          <p className="auth-switch-text">
+            {isLoginForm ? "Don't have an account? " : "Already have an account? "}
+            <span
+              className="auth-switch-link"
               onClick={() => setIsLoginForm(!isLoginForm)}
             >
-              {isLoginForm
-                ? "Don't have an account? Signup"
-                : "Already have an account? Login"}
-            </p>
-          </form>
+              {isLoginForm ? "Signup" : "Login"}
+            </span>
+          </p>
+        </form>
+      </div>
+
+      {showPopup && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <p>{popupMessage}</p>
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
-};
-
-export default Navbar;
+}
