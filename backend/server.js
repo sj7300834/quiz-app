@@ -23,18 +23,24 @@ cloudinary.config({
 });
 
 const app = express();
-app.set("trust proxy",1);
+
+/* =========================
+   TRUST PROXY (Railway)
+========================= */
+app.set("trust proxy", 1);
 
 /* =========================
    SECURITY MIDDLEWARE
 ========================= */
 app.use(
   helmet({
-    crossOriginResourcePolicy: false, // safer for external assets
+    crossOriginResourcePolicy: false,
   })
 );
 
-// Rate limiting
+/* =========================
+   RATE LIMITING
+========================= */
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -42,36 +48,48 @@ app.use(
   })
 );
 
-// Logging
+/* =========================
+   LOGGING
+========================= */
 app.use(morgan("dev"));
 
 /* =========================
-   CORS CONFIG (IMPORTANT)
+   CORS (FINAL FIX)
 ========================= */
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  "https://quiz-app-two-lac-36.vercel.app",
   "http://localhost:3000",
-].filter(Boolean);
+];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS not allowed"));
+    origin: (origin, callback) => {
+      // allow server-to-server & curl/postman
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+
+      return callback(new Error("CORS not allowed"), false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Body parser
+// IMPORTANT: handle preflight
+app.options("*", cors());
+
+/* =========================
+   BODY PARSER
+========================= */
 app.use(express.json());
 
-// Static files
+/* =========================
+   STATIC FILES
+========================= */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* =========================
