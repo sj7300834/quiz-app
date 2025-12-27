@@ -12,10 +12,14 @@ const questionRoutes = require("./routes/questionRoutes");
 const authRoutes = require("./routes/authRoutes");
 const contactRoutes = require("./routes/contact");
 
-// Load environment variables
+// =========================
+// ENV
+// =========================
 dotenv.config();
 
-// Configure Cloudinary
+// =========================
+// CLOUDINARY
+// =========================
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -24,23 +28,23 @@ cloudinary.config({
 
 const app = express();
 
-/* =========================
-   TRUST PROXY (Railway)
-========================= */
+// =========================
+// TRUST PROXY (Render / Cloud)
+// =========================
 app.set("trust proxy", 1);
 
-/* =========================
-   SECURITY
-========================= */
+// =========================
+// SECURITY
+// =========================
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
   })
 );
 
-/* =========================
-   RATE LIMITING
-========================= */
+// =========================
+// RATE LIMIT
+// =========================
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -48,31 +52,30 @@ app.use(
   })
 );
 
-/* =========================
-   LOGGING
-========================= */
+// =========================
+// LOGGING
+// =========================
 app.use(morgan("dev"));
 
-/* =========================
-   CORS
-========================= */
+// =========================
+// CORS (INDUSTRY STANDARD)
+// =========================
 const allowedOrigins = [
-  "https://quiz-app-two-lac-36.vercel.app",
-  "http://localhost:3000",
-];
+  process.env.FRONTEND_URL, // production
+  "http://localhost:3000",  // local dev
+].filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow server-to-server, Postman, curl
+      // allow server-to-server / Postman / curl
       if (!origin) return callback(null, true);
 
-      // allow frontend from env
-      if (origin === process.env.FRONTEND_URL) {
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("CORS not allowed"), false);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -80,43 +83,44 @@ app.use(
   })
 );
 
+// Preflight
 app.options("*", cors());
 
-/* =========================
-   BODY PARSER
-========================= */
+// =========================
+// BODY PARSER
+// =========================
 app.use(express.json());
 
-/* =========================
-   STATIC FILES
-========================= */
+// =========================
+// STATIC FILES
+// =========================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-/* =========================
-   DATABASE
-========================= */
+// =========================
+// DATABASE
+// =========================
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-/* =========================
-   ROUTES
-========================= */
+// =========================
+// ROUTES
+// =========================
 app.use("/api/questions", questionRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", contactRoutes);
 
-/* =========================
-   404
-========================= */
+// =========================
+// 404
+// =========================
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-/* =========================
-   ERROR HANDLER
-========================= */
+// =========================
+// ERROR HANDLER
+// =========================
 app.use((err, req, res, next) => {
   console.error("Server Error:", err.message);
   res.status(err.status || 500).json({
@@ -124,10 +128,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* =========================
-   SERVER START (FINAL FIX)
-========================= */
-const PORT = process.env.PORT || 8080;
+// =========================
+// SERVER START
+// =========================
+const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);

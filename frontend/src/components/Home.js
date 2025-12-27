@@ -163,7 +163,7 @@ const Home = ({ isAuthenticated, setShowAuthForm }) => {
       {/* Footer */}
       <footer className="footer">
         <div className="footerContainer">
-          <p className="copyright">© Developed by teams of Hiray collage in MU</p>
+          <p className="copyright">© Developed by teams of Hiray collage under the MU</p>
         </div>
       </footer>
     </div>
