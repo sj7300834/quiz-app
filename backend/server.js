@@ -61,21 +61,22 @@ app.use(morgan("dev"));
 // CORS (INDUSTRY STANDARD)
 // =========================
 const allowedOrigins = [
-  process.env.FRONTEND_URL, // production
-  "http://localhost:3000",  // local dev
-].filter(Boolean);
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow server-to-server / Postman / curl
+    origin: (origin, callback) => {
+      // allow mobile apps, curl, postman
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("Not allowed by CORS"));
+      // ❗ do NOT throw error
+      return callback(null, false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
