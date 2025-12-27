@@ -55,7 +55,11 @@ This project is developed and maintained by a **single developer** and is primar
   - Total time taken
 - Per-question time tracking
 - Result persistence (API + session fallback)
-- Profile picture upload
+- Profile picture upload 
+
+
+
+and some features upcoming soon as possible...
 
 
 ---
