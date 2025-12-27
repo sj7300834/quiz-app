@@ -30,7 +30,7 @@ const app = express();
 app.set("trust proxy", 1);
 
 /* =========================
-   SECURITY MIDDLEWARE
+   SECURITY
 ========================= */
 app.use(
   helmet({
@@ -54,7 +54,7 @@ app.use(
 app.use(morgan("dev"));
 
 /* =========================
-   CORS (FINAL FIX)
+   CORS
 ========================= */
 const allowedOrigins = [
   "https://quiz-app-two-lac-36.vercel.app",
@@ -64,13 +64,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server & curl/postman
       if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
+      if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("CORS not allowed"), false);
     },
     credentials: true,
@@ -79,7 +74,6 @@ app.use(
   })
 );
 
-// IMPORTANT: handle preflight
 app.options("*", cors());
 
 /* =========================
@@ -93,7 +87,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* =========================
-   DATABASE CONNECTION
+   DATABASE
 ========================= */
 mongoose
   .connect(process.env.MONGO_URI)
@@ -108,7 +102,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api", contactRoutes);
 
 /* =========================
-   404 HANDLER
+   404
 ========================= */
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
@@ -119,16 +113,16 @@ app.use((req, res) => {
 ========================= */
 app.use((err, req, res, next) => {
   console.error("Server Error:", err.message);
-
   res.status(err.status || 500).json({
     message: err.message || "Internal Server Error",
   });
 });
 
 /* =========================
-   SERVER START
+   SERVER START (FINAL FIX)
 ========================= */
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
