@@ -63,9 +63,15 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: function (origin, callback) {
+      // allow server-to-server, Postman, curl
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // allow frontend from env
+      if (origin === process.env.FRONTEND_URL) {
+        return callback(null, true);
+      }
+
       return callback(new Error("CORS not allowed"), false);
     },
     credentials: true,
