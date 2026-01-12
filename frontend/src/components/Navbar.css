@@ -3,7 +3,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 20px; /* Removed horizontal padding to reduce space */
+  padding: 5px 12px; /* Removed horizontal padding to reduce space */
   background-color: #007bff;
   color: white;
   position: fixed;
@@ -20,17 +20,17 @@
 }
 
 body {
-  padding-top: 60px; /* Adjust based on navbar height */
+  padding-top: 50px; /* Adjust based on navbar height */
 }
 
 .navbar-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 10%;
-  max-width: 10%; /* Removed max-width to use full width */
-  margin: 0;
-  padding: 0 10px; /* Added minimal padding for slight spacing */
+  width: 100%;
+  max-width: 800px; /* Removed max-width to use full width */
+  margin: 0 auto;
+
 }
 
 .navbar-left {
