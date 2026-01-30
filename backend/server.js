@@ -63,6 +63,7 @@ app.use(morgan("dev"));
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:3000",
+  "http://127.0.0.1:3000",
 ];
 
 app.use(
@@ -76,6 +77,7 @@ app.use(
       }
 
       // ❗ do NOT throw error
+      console.log("❌ Blocked by CORS:", origin);
       return callback(null, false);
     },
     credentials: true,
