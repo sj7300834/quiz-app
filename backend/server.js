@@ -1,6 +1,10 @@
+// =========================
+// ENV LOAD (MUST BE FIRST)
+// =========================
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
@@ -13,12 +17,13 @@ const authRoutes = require("./routes/authRoutes");
 const contactRoutes = require("./routes/contact");
 
 // =========================
-// ENV
+// DEBUG ENV (TEMP)
 // =========================
-dotenv.config();
+console.log("EMAIL_USER:", process.env.EMAIL_USER ? "Loaded" : "Not Loaded");
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Not Loaded");
 
 // =========================
-// CLOUDINARY
+// CLOUDINARY CONFIG
 // =========================
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -29,7 +34,7 @@ cloudinary.config({
 const app = express();
 
 // =========================
-// TRUST PROXY (Render / Cloud)
+// TRUST PROXY
 // =========================
 app.set("trust proxy", 1);
 
@@ -58,7 +63,7 @@ app.use(
 app.use(morgan("dev"));
 
 // =========================
-// CORS (INDUSTRY STANDARD)
+// CORS CONFIG
 // =========================
 const allowedOrigins = [
   process.env.FRONTEND_URL,
@@ -69,14 +74,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow mobile apps, curl, postman
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      // ❗ do NOT throw error
       console.log("❌ Blocked by CORS:", origin);
       return callback(null, false);
     },
@@ -100,7 +103,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // =========================
-// DATABASE
+// DATABASE CONNECTION
 // =========================
 mongoose
   .connect(process.env.MONGO_URI)
@@ -115,14 +118,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api", contactRoutes);
 
 // =========================
-// 404
+// 404 HANDLER
 // =========================
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
 // =========================
-// ERROR HANDLER
+// GLOBAL ERROR HANDLER
 // =========================
 app.use((err, req, res, next) => {
   console.error("Server Error:", err.message);
@@ -134,7 +137,7 @@ app.use((err, req, res, next) => {
 // =========================
 // SERVER START
 // =========================
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
