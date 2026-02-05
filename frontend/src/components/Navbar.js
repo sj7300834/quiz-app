@@ -13,6 +13,12 @@ export default function Navbar({
 }) {
   const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL;
+  useEffect(() => {
+  console.log("===== ENV DEBUG =====");
+  console.log("API URL:", process.env.REACT_APP_API_URL);
+  console.log("GOOGLE CLIENT ID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
+}, []);
+
 
   const [isLoginForm, setIsLoginForm] = useState(false);
   const [username, setUsername] = useState("");
