@@ -112,27 +112,106 @@ export default function Navbar({
     e.preventDefault();
     setError("");
     setIsLoading(true);
+    setShowPopup(false);
+    setPopupMessage("");
 
     try {
+      // Client-side validation
+      if (!isLoginForm) {
+        if (!username || username.trim().length < 3) {
+          setError("Username must be at least 3 characters");
+          setIsLoading(false);
+          return;
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+          setError("Username can only contain letters, numbers and underscores");
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError("Please enter a valid email address");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!password || password.length < 6) {
+        setError("Password must be at least 6 characters");
+        setIsLoading(false);
+        return;
+      }
+
       const endpoint = isLoginForm ? "login" : "signup";
       const body = isLoginForm
-        ? { email, password }
-        : { username, email, password };
+        ? { email: email.trim(), password: password.trim() }
+        : { 
+            username: username.trim(), 
+            email: email.trim(), 
+            password: password.trim() 
+          };
 
       console.log("Sending request to:", `${API_URL}/api/auth/${endpoint}`);
-      console.log("Request body:", body);
+      console.log("Request body:", JSON.stringify(body));
+
+      // Add timeout to request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       const response = await fetch(`${API_URL}/api/auth/${endpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
         body: JSON.stringify(body),
+        signal: controller.signal
       });
 
-      const data = await response.json();
-      console.log("Response data:", data);
+      clearTimeout(timeoutId);
+
+      console.log("Response status:", response.status);
+      
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log("Raw response text:", responseText);
+        
+        if (responseText) {
+          data = JSON.parse(responseText);
+        } else {
+          data = {};
+        }
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", parseError);
+        setError("Server returned invalid response format");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("Parsed response data:", data);
+
+      // Handle specific HTTP status codes
+      if (response.status === 500) {
+        // Internal Server Error
+        if (data.message && data.message.includes("email")) {
+          setError("Email already exists or is invalid");
+        } else if (data.message && data.message.includes("username")) {
+          setError("Username already exists");
+        } else if (data.message && data.message.includes("password")) {
+          setError("Password does not meet requirements");
+        } else if (data.message === "Something went wrong") {
+          setError("Server error. This might be due to: 1) Email already registered 2) Server issue. Please try again.");
+        } else {
+          setError("Internal server error. Please try again later.");
+        }
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok) {
-        const errorMsg = data.message || data.msg || data.error || "Something went wrong";
+        const errorMsg = data.message || data.msg || data.error || 
+                        data.details || `Request failed (Status: ${response.status})`;
         setError(errorMsg);
         setIsLoading(false);
         return;
@@ -140,38 +219,65 @@ export default function Navbar({
 
       // LOGIN SUCCESS
       if (isLoginForm) {
+        if (!data.token) {
+          setError("Login failed: No authentication token received");
+          setIsLoading(false);
+          return;
+        }
+
         localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          setUser(data.user);
+        }
         setIsAuthenticated(true);
-        setUser(data.user);
-        setPopupMessage("Login Successful!");
+        setPopupMessage("Login Successful! Redirecting...");
+        setShowPopup(true);
         setShowAuthForm(false);
         setIsLoading(false);
         setTimeout(() => navigate("/"), 1200);
       }
       // SIGNUP → OTP FLOW
       else {
-        if (data.message === "OTP sent to email" || data.msg === "OTP sent to email") {
-          setPopupMessage("OTP sent successfully! Please check your email.");
-          setShowOTPForm(true);
-          setShowAuthForm(false);
-        } else if (data.message === "User registered, please verify OTP") {
+        // Check various success message formats from server
+        const successMessage = data.message || data.msg || "Registration successful";
+        
+        if (successMessage.toLowerCase().includes("otp") || 
+            successMessage.toLowerCase().includes("sent") || 
+            successMessage.toLowerCase().includes("verify") ||
+            data.requiresVerification === true ||
+            data.verified === false) {
+          
           setPopupMessage("Registration successful! OTP sent to your email.");
           setShowOTPForm(true);
           setShowAuthForm(false);
-        } else {
-          // Fallback for any other successful signup response
-          setPopupMessage(data.message || "Registration successful! Please check your email for OTP.");
+        } 
+        // If server returns token directly (no OTP required)
+        else if (data.token) {
+          localStorage.setItem("token", data.token);
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+            setUser(data.user);
+          }
+          setIsAuthenticated(true);
+          setPopupMessage("Registration successful! You are now logged in.");
+          setShowAuthForm(false);
+          setTimeout(() => navigate("/"), 1200);
+        }
+        // Default case
+        else {
+          setPopupMessage("Registration successful! Please check your email for OTP.");
           setShowOTPForm(true);
           setShowAuthForm(false);
         }
+        
         setIsLoading(false);
       }
 
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 3000);
       
-      // Clear form fields
+      // Clear form fields only on success
       if (!isLoginForm) {
         setUsername("");
       }
@@ -180,7 +286,15 @@ export default function Navbar({
       
     } catch (err) {
       console.error("Error during form submission:", err);
-      setError("Network error. Please check your connection.");
+      
+      if (err.name === 'AbortError') {
+        setError("Request timeout. Please check your internet connection.");
+      } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError("Network error. Cannot connect to server.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+      
       setIsLoading(false);
     }
   };
@@ -291,6 +405,42 @@ export default function Navbar({
     }
   };
 
+  /* ================= TEST SERVER CONNECTION ================= */
+  const testServerConnection = async () => {
+    console.log("Testing server connection...");
+    try {
+      // First test basic server connectivity
+      const healthResponse = await fetch(`${API_URL}/api/health`, {
+        method: "GET",
+        headers: { "Accept": "application/json" }
+      });
+      console.log("Health check response:", healthResponse.status);
+      
+      // Test signup endpoint
+      const testData = {
+        username: "testuser_" + Date.now(),
+        email: "test_" + Date.now() + "@example.com",
+        password: "Test@123456"
+      };
+      
+      console.log("Testing with data:", testData);
+      const signupTest = await fetch(`${API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(testData)
+      });
+      
+      const responseText = await signupTest.text();
+      console.log("Signup test - Status:", signupTest.status, "Response:", responseText);
+      
+    } catch (error) {
+      console.error("Server connection test failed:", error);
+    }
+  };
+
   /* ================= JSX ================= */
   return (
     <div>
@@ -346,6 +496,13 @@ export default function Navbar({
                   <p>{user.email}</p>
                   <Link to="/profile">Profile</Link>
                   <button onClick={handleLogout}>Logout</button>
+                  {/* Debug button - remove in production */}
+                  <button 
+                    onClick={testServerConnection}
+                    style={{marginTop: '10px', fontSize: '10px', padding: '5px'}}
+                  >
+                    Test Server
+                  </button>
                 </div>
               )}
             </div>
@@ -374,11 +531,13 @@ export default function Navbar({
         <div
           className="auth-form-overlay"
           onClick={() => {
-            setShowAuthForm(false);
-            setError("");
-            setUsername("");
-            setEmail("");
-            setPassword("");
+            if (!isLoading) {
+              setShowAuthForm(false);
+              setError("");
+              setUsername("");
+              setEmail("");
+              setPassword("");
+            }
           }}
         />
       )}
@@ -389,48 +548,85 @@ export default function Navbar({
           <h2>{isLoginForm ? "Login" : "Signup"}</h2>
 
           {!isLoginForm && (
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
-              required
-              disabled={isLoading}
-            />
+            <div className="form-group">
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                required
+                disabled={isLoading}
+                className="form-input"
+              />
+              <small className="form-hint">3-20 characters, letters, numbers, underscores only</small>
+            </div>
           )}
 
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            required
-            disabled={isLoading}
-          />
+          <div className="form-group">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+              disabled={isLoading}
+              className="form-input"
+            />
+          </div>
 
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            required
-            disabled={isLoading}
-            minLength="6"
-          />
+          <div className="form-group">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+              disabled={isLoading}
+              minLength="6"
+              className="form-input"
+            />
+            <small className="form-hint">Minimum 6 characters</small>
+          </div>
 
-          {error && <p className="error-message">{error}</p>}
+          {error && (
+            <div className="error-container">
+              <p className="error-message">
+                <strong>Error:</strong> {error}
+              </p>
+              {error.includes("server") || error.includes("timeout") ? (
+                <button 
+                  type="button"
+                  className="retry-button"
+                  onClick={testServerConnection}
+                  disabled={isLoading}
+                >
+                  Test Server Connection
+                </button>
+              ) : null}
+            </div>
+          )}
 
           <button 
             type="submit" 
-            className="form-button"
+            className={`form-button ${isLoading ? 'loading' : ''}`}
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : (isLoginForm ? "Login" : "Signup")}
+            {isLoading ? (
+              <>
+                <span className="spinner"></span>
+                Processing...
+              </>
+            ) : (
+              isLoginForm ? "Login" : "Signup"
+            )}
           </button>
 
           <div style={{ marginTop: "15px", textAlign: "center" }}>
             <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={() => setError("Google Login Failed")}
+              theme="filled_blue"
+              size="large"
+              shape="rectangular"
             />
           </div>
 
@@ -448,6 +644,18 @@ export default function Navbar({
               {isLoginForm ? "Signup" : "Login"}
             </span>
           </p>
+
+          {/* Debug info - remove in production */}
+          <div className="debug-info">
+            <small>Server: {API_URL}</small>
+            <button 
+              type="button"
+              onClick={testServerConnection}
+              className="debug-button"
+            >
+              Debug Server
+            </button>
+          </div>
         </form>
       </div>
 
@@ -468,25 +676,37 @@ export default function Navbar({
               <p className="otp-instruction">
                 Enter the 6-digit OTP sent to <strong>{email}</strong>
               </p>
-              <input
-                value={otp}
-                maxLength={6}
-                inputMode="numeric"
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="Enter 6-digit OTP"
-                disabled={isLoading}
-              />
+              
+              <div className="form-group">
+                <input
+                  value={otp}
+                  maxLength={6}
+                  inputMode="numeric"
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter 6-digit OTP"
+                  disabled={isLoading}
+                  className="form-input otp-input"
+                />
+                <small className="form-hint">Check your email spam folder if you don't see the OTP</small>
+              </div>
               
               {error && <p className="error-message">{error}</p>}
               
               <div className="otp-buttons">
                 <button
                   type="button"
-                  className="form-button primary"
+                  className={`form-button primary ${isLoading ? 'loading' : ''}`}
                   onClick={handleVerifyOTP}
                   disabled={isLoading || otp.length !== 6}
                 >
-                  {isLoading ? "Verifying..." : "Verify OTP"}
+                  {isLoading ? (
+                    <>
+                      <span className="spinner"></span>
+                      Verifying...
+                    </>
+                  ) : (
+                    "Verify OTP"
+                  )}
                 </button>
                 
                 <button
@@ -527,6 +747,7 @@ export default function Navbar({
             <button 
               className="popup-close"
               onClick={() => setShowPopup(false)}
+              autoFocus
             >
               OK
             </button>
