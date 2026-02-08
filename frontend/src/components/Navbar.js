@@ -14,12 +14,6 @@ export default function Navbar({
   const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL;
 
-  useEffect(() => {
-    console.log("===== ENV DEBUG =====");
-    console.log("API URL:", process.env.REACT_APP_API_URL);
-    console.log("GOOGLE CLIENT ID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
-  }, []);
-
   const [isLoginForm, setIsLoginForm] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +25,6 @@ export default function Navbar({
   const [showDropdown, setShowDropdown] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   // OTP States
   const [showOTPForm, setShowOTPForm] = useState(false);
@@ -111,191 +104,62 @@ export default function Navbar({
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
-    setShowPopup(false);
-    setPopupMessage("");
 
     try {
-      // Client-side validation
-      if (!isLoginForm) {
-        if (!username || username.trim().length < 3) {
-          setError("Username must be at least 3 characters");
-          setIsLoading(false);
-          return;
-        }
-        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-          setError("Username can only contain letters, numbers and underscores");
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setError("Please enter a valid email address");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!password || password.length < 6) {
-        setError("Password must be at least 6 characters");
-        setIsLoading(false);
-        return;
-      }
-
       const endpoint = isLoginForm ? "login" : "signup";
       const body = isLoginForm
-        ? { email: email.trim(), password: password.trim() }
-        : { 
-            username: username.trim(), 
-            email: email.trim(), 
-            password: password.trim() 
-          };
-
-      console.log("Sending request to:", `${API_URL}/api/auth/${endpoint}`);
-      console.log("Request body:", JSON.stringify(body));
-
-      // Add timeout to request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+        ? { email, password }
+        : { username, email, password };
 
       const response = await fetch(`${API_URL}/api/auth/${endpoint}`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
-
-      console.log("Response status:", response.status);
-      
       let data;
       try {
-        const responseText = await response.text();
-        console.log("Raw response text:", responseText);
-        
-        if (responseText) {
-          data = JSON.parse(responseText);
-        } else {
-          data = {};
-        }
-      } catch (parseError) {
-        console.error("Failed to parse JSON response:", parseError);
-        setError("Server returned invalid response format");
-        setIsLoading(false);
-        return;
-      }
-
-      console.log("Parsed response data:", data);
-
-      // Handle specific HTTP status codes
-      if (response.status === 500) {
-        // Internal Server Error
-        if (data.message && data.message.includes("email")) {
-          setError("Email already exists or is invalid");
-        } else if (data.message && data.message.includes("username")) {
-          setError("Username already exists");
-        } else if (data.message && data.message.includes("password")) {
-          setError("Password does not meet requirements");
-        } else if (data.message === "Something went wrong") {
-          setError("Server error. This might be due to: 1) Email already registered 2) Server issue. Please try again.");
-        } else {
-          setError("Internal server error. Please try again later.");
-        }
-        setIsLoading(false);
-        return;
+        data = await response.json();
+      } catch {
+        data = { message: "Server returned invalid response" };
       }
 
       if (!response.ok) {
-        const errorMsg = data.message || data.msg || data.error || 
-                        data.details || `Request failed (Status: ${response.status})`;
+        // Check for different error message formats
+        const errorMsg = data.message || data.msg || data.error || "Something went wrong";
         setError(errorMsg);
-        setIsLoading(false);
         return;
       }
 
       // LOGIN SUCCESS
       if (isLoginForm) {
-        if (!data.token) {
-          setError("Login failed: No authentication token received");
-          setIsLoading(false);
-          return;
-        }
-
         localStorage.setItem("token", data.token);
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-          setUser(data.user);
-        }
+        localStorage.setItem("user", JSON.stringify(data.user));
         setIsAuthenticated(true);
-        setPopupMessage("Login Successful! Redirecting...");
-        setShowPopup(true);
+        setUser(data.user);
+        setPopupMessage("Login Successful!");
         setShowAuthForm(false);
-        setIsLoading(false);
         setTimeout(() => navigate("/"), 1200);
       }
       // SIGNUP → OTP FLOW
       else {
-        // Check various success message formats from server
-        const successMessage = data.message || data.msg || "Registration successful";
-        
-        if (successMessage.toLowerCase().includes("otp") || 
-            successMessage.toLowerCase().includes("sent") || 
-            successMessage.toLowerCase().includes("verify") ||
-            data.requiresVerification === true ||
-            data.verified === false) {
-          
-          setPopupMessage("Registration successful! OTP sent to your email.");
-          setShowOTPForm(true);
-          setShowAuthForm(false);
-        } 
-        // If server returns token directly (no OTP required)
-        else if (data.token) {
-          localStorage.setItem("token", data.token);
-          if (data.user) {
-            localStorage.setItem("user", JSON.stringify(data.user));
-            setUser(data.user);
-          }
-          setIsAuthenticated(true);
-          setPopupMessage("Registration successful! You are now logged in.");
-          setShowAuthForm(false);
-          setTimeout(() => navigate("/"), 1200);
-        }
-        // Default case
-        else {
-          setPopupMessage("Registration successful! Please check your email for OTP.");
-          setShowOTPForm(true);
-          setShowAuthForm(false);
+        // Handle different success message formats
+        if (data.message && data.message.includes("OTP")) {
+          setPopupMessage(data.message);
+        } else if (data.msg && data.msg.includes("OTP")) {
+          setPopupMessage(data.msg);
+        } else {
+          setPopupMessage("OTP sent to your email! Please check your inbox.");
         }
         
-        setIsLoading(false);
+        setShowOTPForm(true);
+        setShowAuthForm(false);
       }
 
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 3000);
-      
-      // Clear form fields only on success
-      if (!isLoginForm) {
-        setUsername("");
-      }
-      setEmail("");
-      setPassword("");
-      
-    } catch (err) {
-      console.error("Error during form submission:", err);
-      
-      if (err.name === 'AbortError') {
-        setError("Request timeout. Please check your internet connection.");
-      } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setError("Network error. Cannot connect to server.");
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
-      
-      setIsLoading(false);
+    } catch {
+      setError("Network error. Please check your connection.");
     }
   };
 
@@ -327,8 +191,7 @@ export default function Navbar({
       setShowPopup(true);
       setShowAuthForm(false);
       setTimeout(() => navigate("/"), 1200);
-    } catch (err) {
-      console.error("Google login error:", err);
+    } catch {
       setError("Google login failed. Please try again.");
     }
   };
@@ -337,13 +200,6 @@ export default function Navbar({
   const handleVerifyOTP = async () => {
     try {
       setError("");
-      setIsLoading(true);
-
-      if (!otp.trim() || otp.length !== 6) {
-        setError("Please enter a valid 6-digit OTP");
-        setIsLoading(false);
-        return;
-      }
 
       const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
         method: "POST",
@@ -351,13 +207,16 @@ export default function Navbar({
         body: JSON.stringify({ email, otp: otp.trim() }),
       });
 
-      const data = await response.json();
-      console.log("OTP Verification Response:", data);
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = { msg: "Server returned invalid response" };
+      }
 
       if (!response.ok) {
         const errorMsg = data.msg || data.message || data.error || "Invalid OTP";
         setError(errorMsg);
-        setIsLoading(false);
         return;
       }
 
@@ -367,77 +226,10 @@ export default function Navbar({
       setShowAuthForm(true);
       setShowPopup(true);
       setOtp("");
-      setIsLoading(false);
       
       setTimeout(() => setShowPopup(false), 3000);
-    } catch (err) {
-      console.error("OTP verification error:", err);
+    } catch {
       setError("OTP verification failed. Please try again.");
-      setIsLoading(false);
-    }
-  };
-
-  /* ================= RESEND OTP ================= */
-  const handleResendOTP = async () => {
-    try {
-      setError("");
-      
-      const response = await fetch(`${API_URL}/api/auth/resend-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMsg = data.msg || data.message || data.error || "Failed to resend OTP";
-        setError(errorMsg);
-        return;
-      }
-
-      setPopupMessage("New OTP sent to your email!");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 3000);
-    } catch (err) {
-      console.error("Resend OTP error:", err);
-      setError("Failed to resend OTP. Please try again.");
-    }
-  };
-
-  /* ================= TEST SERVER CONNECTION ================= */
-  const testServerConnection = async () => {
-    console.log("Testing server connection...");
-    try {
-      // First test basic server connectivity
-      const healthResponse = await fetch(`${API_URL}/api/health`, {
-        method: "GET",
-        headers: { "Accept": "application/json" }
-      });
-      console.log("Health check response:", healthResponse.status);
-      
-      // Test signup endpoint
-      const testData = {
-        username: "testuser_" + Date.now(),
-        email: "test_" + Date.now() + "@example.com",
-        password: "Test@123456"
-      };
-      
-      console.log("Testing with data:", testData);
-      const signupTest = await fetch(`${API_URL}/api/auth/signup`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(testData)
-      });
-      
-      const responseText = await signupTest.text();
-      console.log("Signup test - Status:", signupTest.status, "Response:", responseText);
-      
-    } catch (error) {
-      console.error("Server connection test failed:", error);
     }
   };
 
@@ -496,13 +288,6 @@ export default function Navbar({
                   <p>{user.email}</p>
                   <Link to="/profile">Profile</Link>
                   <button onClick={handleLogout}>Logout</button>
-                  {/* Debug button - remove in production */}
-                  <button 
-                    onClick={testServerConnection}
-                    style={{marginTop: '10px', fontSize: '10px', padding: '5px'}}
-                  >
-                    Test Server
-                  </button>
                 </div>
               )}
             </div>
@@ -514,9 +299,6 @@ export default function Navbar({
                   setIsLoginForm(!isLoginForm);
                   setShowAuthForm(true);
                   setError("");
-                  setUsername("");
-                  setEmail("");
-                  setPassword("");
                 }}
               >
                 {isLoginForm ? "Signup" : "Login"}
@@ -530,15 +312,7 @@ export default function Navbar({
       {showAuthForm && (
         <div
           className="auth-form-overlay"
-          onClick={() => {
-            if (!isLoading) {
-              setShowAuthForm(false);
-              setError("");
-              setUsername("");
-              setEmail("");
-              setPassword("");
-            }
-          }}
+          onClick={() => setShowAuthForm(false)}
         />
       )}
 
@@ -548,85 +322,40 @@ export default function Navbar({
           <h2>{isLoginForm ? "Login" : "Signup"}</h2>
 
           {!isLoginForm && (
-            <div className="form-group">
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                required
-                disabled={isLoading}
-                className="form-input"
-              />
-              <small className="form-hint">3-20 characters, letters, numbers, underscores only</small>
-            </div>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              required
+            />
           )}
 
-          <div className="form-group">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              disabled={isLoading}
-              className="form-input"
-            />
-          </div>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            required
+          />
 
-          <div className="form-group">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-              disabled={isLoading}
-              minLength="6"
-              className="form-input"
-            />
-            <small className="form-hint">Minimum 6 characters</small>
-          </div>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            required
+          />
 
-          {error && (
-            <div className="error-container">
-              <p className="error-message">
-                <strong>Error:</strong> {error}
-              </p>
-              {error.includes("server") || error.includes("timeout") ? (
-                <button 
-                  type="button"
-                  className="retry-button"
-                  onClick={testServerConnection}
-                  disabled={isLoading}
-                >
-                  Test Server Connection
-                </button>
-              ) : null}
-            </div>
-          )}
+          {error && <p className="error-message">{error}</p>}
 
-          <button 
-            type="submit" 
-            className={`form-button ${isLoading ? 'loading' : ''}`}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="spinner"></span>
-                Processing...
-              </>
-            ) : (
-              isLoginForm ? "Login" : "Signup"
-            )}
+          <button type="submit" className="form-button">
+            {isLoginForm ? "Login" : "Signup"}
           </button>
 
           <div style={{ marginTop: "15px", textAlign: "center" }}>
             <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={() => setError("Google Login Failed")}
-              theme="filled_blue"
-              size="large"
-              shape="rectangular"
             />
           </div>
 
@@ -634,106 +363,36 @@ export default function Navbar({
             {isLoginForm ? "Don't have an account? " : "Already have an account? "}
             <span
               className="auth-switch-link"
-              onClick={() => {
-                if (!isLoading) {
-                  setIsLoginForm(!isLoginForm);
-                  setError("");
-                }
-              }}
+              onClick={() => setIsLoginForm(!isLoginForm)}
             >
               {isLoginForm ? "Signup" : "Login"}
             </span>
           </p>
-
-          {/* Debug info - remove in production */}
-          <div className="debug-info">
-            <small>Server: {API_URL}</small>
-            <button 
-              type="button"
-              onClick={testServerConnection}
-              className="debug-button"
-            >
-              Debug Server
-            </button>
-          </div>
         </form>
       </div>
 
       {/* OTP FORM */}
       {showOTPForm && (
         <>
-          <div className="auth-form-overlay" onClick={() => {
-            if (!isLoading) {
-              setShowOTPForm(false);
-              setShowAuthForm(true);
-              setOtp("");
-              setError("");
-            }
-          }} />
+          <div className="auth-form-overlay" />
           <div className="auth-form open">
-            <form className="drawer-form" onSubmit={(e) => e.preventDefault()}>
+            <form className="drawer-form">
               <h2>Verify OTP</h2>
-              <p className="otp-instruction">
-                Enter the 6-digit OTP sent to <strong>{email}</strong>
-              </p>
-              
-              <div className="form-group">
-                <input
-                  value={otp}
-                  maxLength={6}
-                  inputMode="numeric"
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Enter 6-digit OTP"
-                  disabled={isLoading}
-                  className="form-input otp-input"
-                />
-                <small className="form-hint">Check your email spam folder if you don't see the OTP</small>
-              </div>
-              
+              <input
+                value={otp}
+                maxLength={6}
+                inputMode="numeric"
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                placeholder="Enter 6-digit OTP"
+              />
               {error && <p className="error-message">{error}</p>}
-              
-              <div className="otp-buttons">
-                <button
-                  type="button"
-                  className={`form-button primary ${isLoading ? 'loading' : ''}`}
-                  onClick={handleVerifyOTP}
-                  disabled={isLoading || otp.length !== 6}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner"></span>
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify OTP"
-                  )}
-                </button>
-                
-                <button
-                  type="button"
-                  className="form-button secondary"
-                  onClick={handleResendOTP}
-                  disabled={isLoading}
-                >
-                  Resend OTP
-                </button>
-              </div>
-              
-              <p className="auth-switch-text">
-                <span
-                  className="auth-switch-link"
-                  onClick={() => {
-                    if (!isLoading) {
-                      setShowOTPForm(false);
-                      setShowAuthForm(true);
-                      setOtp("");
-                      setError("");
-                    }
-                  }}
-                >
-                  Back to {isLoginForm ? "Login" : "Signup"}
-                </span>
-              </p>
+              <button
+                type="button"
+                className="form-button"
+                onClick={handleVerifyOTP}
+              >
+                Verify OTP
+              </button>
             </form>
           </div>
         </>
@@ -744,13 +403,6 @@ export default function Navbar({
         <div className="popup-overlay">
           <div className="popup">
             <p>{popupMessage}</p>
-            <button 
-              className="popup-close"
-              onClick={() => setShowPopup(false)}
-              autoFocus
-            >
-              OK
-            </button>
           </div>
         </div>
       )}
