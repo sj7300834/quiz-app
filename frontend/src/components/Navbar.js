@@ -297,7 +297,6 @@ export default function Navbar({
         </form>
       </div>
 
-      // Only changed OTP input + overlay safety
 
 {/* OTP FORM */}
 {showOTPForm && (
