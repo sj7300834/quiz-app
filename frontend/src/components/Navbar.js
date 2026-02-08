@@ -13,24 +13,22 @@ export default function Navbar({
 }) {
   const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL;
-  useEffect(() => {
-  console.log("===== ENV DEBUG =====");
-  console.log("API URL:", process.env.REACT_APP_API_URL);
-  console.log("GOOGLE CLIENT ID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
-}, []);
 
+  useEffect(() => {
+    console.log("===== ENV DEBUG =====");
+    console.log("API URL:", process.env.REACT_APP_API_URL);
+    console.log("GOOGLE CLIENT ID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
+  }, []);
 
   const [isLoginForm, setIsLoginForm] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
@@ -87,7 +85,10 @@ export default function Navbar({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(event.target)
+      ) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -112,7 +113,9 @@ export default function Navbar({
 
     try {
       const endpoint = isLoginForm ? "login" : "signup";
-      const body = isLoginForm ? { email, password } : { username, email, password };
+      const body = isLoginForm
+        ? { email, password }
+        : { username, email, password };
 
       const response = await fetch(`${API_URL}/api/auth/${endpoint}`, {
         method: "POST",
@@ -130,7 +133,6 @@ export default function Navbar({
         localStorage.setItem("user", JSON.stringify(data.user));
         setIsAuthenticated(true);
         setUser(data.user);
-
         setPopupMessage("Login Successful!");
         setShowAuthForm(false);
         setTimeout(() => navigate("/"), 1200);
@@ -144,7 +146,6 @@ export default function Navbar({
 
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 1500);
-
     } catch {
       setError("Something went wrong. Please try again.");
     }
@@ -162,6 +163,7 @@ export default function Navbar({
       });
 
       const data = await response.json();
+
       if (!response.ok) return setError("Google login failed");
 
       localStorage.setItem("token", data.token);
@@ -172,7 +174,6 @@ export default function Navbar({
       setPopupMessage("Google Login Successful!");
       setShowPopup(true);
       setShowAuthForm(false);
-
       setTimeout(() => navigate("/"), 1200);
     } catch {
       setError("Google login failed");
@@ -191,6 +192,7 @@ export default function Navbar({
       });
 
       const data = await response.json();
+
       if (!response.ok) return setError(data.msg || "Invalid OTP");
 
       setPopupMessage("Email verified! Now login.");
@@ -198,9 +200,7 @@ export default function Navbar({
       setIsLoginForm(true);
       setShowAuthForm(true);
       setShowPopup(true);
-
       setTimeout(() => setShowPopup(false), 1500);
-
     } catch {
       setError("OTP verification failed");
     }
@@ -216,29 +216,44 @@ export default function Navbar({
             <Link className="navbar-brand" to="/">
               <h1>Quiz App</h1>
             </Link>
-
-            <div className={`nav-links ${isMobileMenuOpen ? "open" : ""}`} ref={mobileMenuRef}>
+            <div
+              className={`nav-links ${isMobileMenuOpen ? "open" : ""}`}
+              ref={mobileMenuRef}
+            >
               <Link to="/">Home</Link>
               <Link to="/about">About</Link>
               <Link to="/contact">Contact</Link>
             </div>
           </div>
 
-          <div className="mobile-menu-icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <div
+            className="mobile-menu-icon"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
             ☰
           </div>
 
           {/* PROFILE */}
           {isAuthenticated && user ? (
-            <div className="profile" ref={dropdownRef} onClick={() => setShowDropdown(!showDropdown)}>
+            <div
+              className="profile"
+              ref={dropdownRef}
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
               {user.profilePicture || user.picture ? (
-                <img src={user.profilePicture || user.picture} alt="Profile" className="profile-pic" />
+                <img
+                  src={user.profilePicture || user.picture}
+                  alt="Profile"
+                  className="profile-pic"
+                />
               ) : (
                 <div className="profile-default">
                   {(user.username || user.name || "U")[0].toUpperCase()}
                 </div>
               )}
-              <span className="username-display">{user.username || user.name}</span>
+              <span className="username-display">
+                {user.username || user.name}
+              </span>
 
               {showDropdown && (
                 <div className="dropdown">
@@ -266,7 +281,12 @@ export default function Navbar({
       </nav>
 
       {/* AUTH OVERLAY */}
-      {showAuthForm && <div className="auth-form-overlay" onClick={() => setShowAuthForm(false)} />}
+      {showAuthForm && (
+        <div
+          className="auth-form-overlay"
+          onClick={() => setShowAuthForm(false)}
+        />
+      )}
 
       {/* LOGIN / SIGNUP FORM */}
       <div className={`auth-form ${showAuthForm ? "open" : ""}`}>
@@ -274,61 +294,82 @@ export default function Navbar({
           <h2>{isLoginForm ? "Login" : "Signup"}</h2>
 
           {!isLoginForm && (
-            <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required />
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              required
+            />
           )}
 
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" required />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            required
+          />
+
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            required
+          />
 
           {error && <p className="error-message">{error}</p>}
 
-          <button type="submit" className="form-button">{isLoginForm ? "Login" : "Signup"}</button>
+          <button type="submit" className="form-button">
+            {isLoginForm ? "Login" : "Signup"}
+          </button>
 
           <div style={{ marginTop: "15px", textAlign: "center" }}>
-            <GoogleLogin onSuccess={handleGoogleLogin} onError={() => setError("Google Login Failed")} />
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => setError("Google Login Failed")}
+            />
           </div>
 
           <p className="auth-switch-text">
             {isLoginForm ? "Don't have an account? " : "Already have an account? "}
-            <span className="auth-switch-link" onClick={() => setIsLoginForm(!isLoginForm)}>
+            <span
+              className="auth-switch-link"
+              onClick={() => setIsLoginForm(!isLoginForm)}
+            >
               {isLoginForm ? "Signup" : "Login"}
             </span>
           </p>
         </form>
       </div>
 
-
-{/* OTP FORM */}
-{showOTPForm && (
-  <>
-    <div className="auth-form-overlay" /> {/* prevent accidental close */}
-
-    <div className="auth-form open">
-      <form className="drawer-form">
-        <h2>Verify OTP</h2>
-
-        <input
-          value={otp}
-          maxLength={6}
-          inputMode="numeric"
-          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-          placeholder="Enter 6-digit OTP"
-        />
-
-        {error && <p className="error-message">{error}</p>}
-
-        <button
-          type="button"
-          className="form-button"
-          onClick={handleVerifyOTP}
-        >
-          Verify OTP
-        </button>
-      </form>
-    </div>
-  </>
-)}
-
+      {/* OTP FORM */}
+      {showOTPForm && (
+        <>
+          <div className="auth-form-overlay" />
+          {/* prevent accidental close */}
+          <div className="auth-form open">
+            <form className="drawer-form">
+              <h2>Verify OTP</h2>
+              <input
+                value={otp}
+                maxLength={6}
+                inputMode="numeric"
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                placeholder="Enter 6-digit OTP"
+              />
+              {error && <p className="error-message">{error}</p>}
+              <button
+                type="button"
+                className="form-button"
+                onClick={handleVerifyOTP}
+              >
+                Verify OTP
+              </button>
+            </form>
+          </div>
+        </>
+      )}
 
       {/* POPUP */}
       {showPopup && (
