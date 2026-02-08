@@ -198,40 +198,34 @@ export default function Navbar({
 
   /* ================= OTP VERIFY ================= */
   const handleVerifyOTP = async () => {
-    try {
-      setError("");
+  try {
+    setError("");
 
-      const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: otp.trim() }),
-      });
+    const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp: otp.trim() }),
+    });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        data = { msg: "Server returned invalid response" };
-      }
+    const data = await response.json();
 
-      if (!response.ok) {
-        const errorMsg = data.msg || data.message || data.error || "Invalid OTP";
-        setError(errorMsg);
-        return;
-      }
-
-      setPopupMessage("Email verified successfully! You can now login.");
-      setShowOTPForm(false);
-      setIsLoginForm(true);
-      setShowAuthForm(true);
-      setShowPopup(true);
-      setOtp("");
-      
-      setTimeout(() => setShowPopup(false), 3000);
-    } catch {
-      setError("OTP verification failed. Please try again.");
+    if (!response.ok) {
+      return setError(data.message || data.msg || "Invalid OTP");
     }
-  };
+
+    setPopupMessage("Email verified! Now login.");
+    setShowOTPForm(false);
+    setIsLoginForm(true);
+    setShowAuthForm(true);
+    setShowPopup(true);
+
+    setTimeout(() => setShowPopup(false), 1500);
+
+  } catch {
+    setError("OTP verification failed");
+  }
+};
+
 
   /* ================= JSX ================= */
   return (
