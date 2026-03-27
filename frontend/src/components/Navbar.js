@@ -153,33 +153,40 @@ export default function Navbar({
 
   /* ================= GOOGLE LOGIN ================= */
   const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      const token = credentialResponse.credential;
+  try {
+    const token = credentialResponse?.credential;
 
-      const response = await fetch(`${API_URL}/api/auth/google-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) return setError("Google login failed");
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setIsAuthenticated(true);
-      setUser(data.user);
-
-      setPopupMessage("Google Login Successful!");
-      setShowPopup(true);
-      setShowAuthForm(false);
-      setTimeout(() => navigate("/"), 1200);
-    } catch {
-      setError("Google login failed");
+    if (!token) {
+      return setError("Google token missing");
     }
-  };
 
+    const response = await fetch(`${API_URL}/api/auth/google-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) return setError("Google login failed");
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    setIsAuthenticated(true);
+    setUser(data.user);
+
+    setPopupMessage("Google Login Successful!");
+    setShowPopup(true);
+    setShowAuthForm(false);
+
+    setTimeout(() => navigate("/"), 1200);
+  } catch {
+    setError("Google login failed");
+  }
+};
   /* ================= OTP VERIFY ================= */
   const handleVerifyOTP = async () => {
     try {
