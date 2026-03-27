@@ -1,6 +1,6 @@
 const { OAuth2Client } = require("google-auth-library");
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client();
 
 async function verifyGoogleToken(token) {
   try {
@@ -9,7 +9,11 @@ async function verifyGoogleToken(token) {
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
-    return ticket.getPayload();
+    const payload = ticket.getPayload();
+
+    console.log("✅ Google Payload:", payload);
+
+    return payload;
   } catch (error) {
     console.error("❌ Google Token Verification Failed:", error.message);
     return null;
