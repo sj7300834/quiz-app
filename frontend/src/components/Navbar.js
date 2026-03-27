@@ -14,6 +14,12 @@ export default function Navbar({
   const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL;
 
+  useEffect(() => {
+    console.log("===== ENV DEBUG =====");
+    console.log("API URL:", process.env.REACT_APP_API_URL);
+    console.log("GOOGLE CLIENT ID:", process.env.REACT_APP_GOOGLE_CLIENT_ID);
+  }, []);
+
   const [isLoginForm, setIsLoginForm] = useState(false);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -117,19 +123,9 @@ export default function Navbar({
         body: JSON.stringify(body),
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        data = { message: "Server returned invalid response" };
-      }
+      const data = await response.json();
 
-      if (!response.ok) {
-        // Check for different error message formats
-        const errorMsg = data.message || data.msg || data.error || "Something went wrong";
-        setError(errorMsg);
-        return;
-      }
+      if (!response.ok) return setError(data.message || "Something went wrong");
 
       // LOGIN SUCCESS
       if (isLoginForm) {
@@ -143,23 +139,15 @@ export default function Navbar({
       }
       // SIGNUP → OTP FLOW
       else {
-        // Handle different success message formats
-        if (data.message && data.message.includes("OTP")) {
-          setPopupMessage(data.message);
-        } else if (data.msg && data.msg.includes("OTP")) {
-          setPopupMessage(data.msg);
-        } else {
-          setPopupMessage("OTP sent to your email! Please check your inbox.");
-        }
-        
+        setPopupMessage("OTP sent to your email!");
         setShowOTPForm(true);
         setShowAuthForm(false);
       }
 
       setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 3000);
+      setTimeout(() => setShowPopup(false), 1500);
     } catch {
-      setError("Network error. Please check your connection.");
+      setError("Something went wrong. Please try again.");
     }
   };
 
@@ -176,11 +164,7 @@ export default function Navbar({
 
       const data = await response.json();
 
-      if (!response.ok) {
-        const errorMsg = data.message || data.msg || data.error || "Google login failed";
-        setError(errorMsg);
-        return;
-      }
+      if (!response.ok) return setError("Google login failed");
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -192,40 +176,35 @@ export default function Navbar({
       setShowAuthForm(false);
       setTimeout(() => navigate("/"), 1200);
     } catch {
-      setError("Google login failed. Please try again.");
+      setError("Google login failed");
     }
   };
 
   /* ================= OTP VERIFY ================= */
   const handleVerifyOTP = async () => {
-  try {
-    setError("");
+    try {
+      setError("");
 
-    const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, otp: otp.trim() }),
-    });
+      const response = await fetch(`${API_URL}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: otp.trim() }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      return setError(data.message || data.msg || "Invalid OTP");
+      if (!response.ok) return setError(data.msg || "Invalid OTP");
+
+      setPopupMessage("Email verified! Now login.");
+      setShowOTPForm(false);
+      setIsLoginForm(true);
+      setShowAuthForm(true);
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 1500);
+    } catch {
+      setError("OTP verification failed");
     }
-
-    setPopupMessage("Email verified! Now login.");
-    setShowOTPForm(false);
-    setIsLoginForm(true);
-    setShowAuthForm(true);
-    setShowPopup(true);
-
-    setTimeout(() => setShowPopup(false), 1500);
-
-  } catch {
-    setError("OTP verification failed");
-  }
-};
-
+  };
 
   /* ================= JSX ================= */
   return (
@@ -292,7 +271,6 @@ export default function Navbar({
                 onClick={() => {
                   setIsLoginForm(!isLoginForm);
                   setShowAuthForm(true);
-                  setError("");
                 }}
               >
                 {isLoginForm ? "Signup" : "Login"}
@@ -369,6 +347,7 @@ export default function Navbar({
       {showOTPForm && (
         <>
           <div className="auth-form-overlay" />
+          {/* prevent accidental close */}
           <div className="auth-form open">
             <form className="drawer-form">
               <h2>Verify OTP</h2>
