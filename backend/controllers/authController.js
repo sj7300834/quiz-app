@@ -13,11 +13,11 @@ const isDisposableEmail = require("../utils/disposableEmailCheck");
 // =======================
 const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { email, password } = req.body;
 
     // Validate input
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     // Block disposable emails
@@ -31,8 +31,14 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Auto username from email
+    const username = email.split("@")[0];
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate OTP first
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Create user
     user = new User({
@@ -41,23 +47,21 @@ const register = async (req, res) => {
       password: hashedPassword,
       isVerified: false,
       provider: "local",
+      otp,
+      otpExpires: Date.now() + 10 * 60 * 1000,
     });
 
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    await user.save();
-
-    // Send OTP email
+    // Send OTP first
     await sendOTP(email, otp);
+
+    // Save only after email success
+    await user.save();
 
     return res.status(201).json({ message: "OTP sent to your email" });
 
   } catch (error) {
     console.error("REGISTER ERROR:", error);
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 };
 

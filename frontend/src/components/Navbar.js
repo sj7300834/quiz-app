@@ -14,12 +14,7 @@ export default function Navbar({
   const navigate = useNavigate();
   const API_URL = process.env.REACT_APP_API_URL;
 
-  useEffect(() => {
-   
-  }, []);
-
   const [isLoginForm, setIsLoginForm] = useState(false);
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +25,6 @@ export default function Navbar({
   const [showPopup, setShowPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
 
-  // OTP States
   const [showOTPForm, setShowOTPForm] = useState(false);
   const [otp, setOtp] = useState("");
 
@@ -111,9 +105,7 @@ export default function Navbar({
 
     try {
       const endpoint = isLoginForm ? "login" : "signup";
-      const body = isLoginForm
-        ? { email, password }
-        : { username, email, password };
+      const body = { email, password };
 
       const response = await fetch(`${API_URL}/api/auth/${endpoint}`, {
         method: "POST",
@@ -125,7 +117,6 @@ export default function Navbar({
 
       if (!response.ok) return setError(data.message || "Something went wrong");
 
-      // LOGIN SUCCESS
       if (isLoginForm) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
@@ -134,9 +125,7 @@ export default function Navbar({
         setPopupMessage("Login Successful!");
         setShowAuthForm(false);
         setTimeout(() => navigate("/"), 1200);
-      }
-      // SIGNUP → OTP FLOW
-      else {
+      } else {
         setPopupMessage("OTP sent to your email!");
         setShowOTPForm(true);
         setShowAuthForm(false);
@@ -151,40 +140,41 @@ export default function Navbar({
 
   /* ================= GOOGLE LOGIN ================= */
   const handleGoogleLogin = async (credentialResponse) => {
-  try {
-    const token = credentialResponse?.credential;
+    try {
+      const token = credentialResponse?.credential;
 
-    if (!token) {
-      return setError("Google token missing");
+      if (!token) {
+        return setError("Google token missing");
+      }
+
+      const response = await fetch(`${API_URL}/api/auth/google-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) return setError("Google login failed");
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setIsAuthenticated(true);
+      setUser(data.user);
+
+      setPopupMessage("Google Login Successful!");
+      setShowPopup(true);
+      setShowAuthForm(false);
+
+      setTimeout(() => navigate("/"), 1200);
+    } catch {
+      setError("Google login failed");
     }
+  };
 
-    const response = await fetch(`${API_URL}/api/auth/google-login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) return setError("Google login failed");
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    setIsAuthenticated(true);
-    setUser(data.user);
-
-    setPopupMessage("Google Login Successful!");
-    setShowPopup(true);
-    setShowAuthForm(false);
-
-    setTimeout(() => navigate("/"), 1200);
-  } catch {
-    setError("Google login failed");
-  }
-};
   /* ================= OTP VERIFY ================= */
   const handleVerifyOTP = async () => {
     try {
@@ -211,16 +201,15 @@ export default function Navbar({
     }
   };
 
-  /* ================= JSX ================= */
   return (
     <div>
-      {/* NAVBAR */}
       <nav className={`navbar ${showNavbar ? "visible" : "hidden"}`}>
         <div className="navbar-container">
           <div className="navbar-left">
             <Link className="navbar-brand" to="/">
               <h1>Quiz App</h1>
             </Link>
+
             <div
               className={`nav-links ${isMobileMenuOpen ? "open" : ""}`}
               ref={mobileMenuRef}
@@ -238,7 +227,6 @@ export default function Navbar({
             ☰
           </div>
 
-          {/* PROFILE */}
           {isAuthenticated && user ? (
             <div
               className="profile"
@@ -256,6 +244,7 @@ export default function Navbar({
                   {(user.username || user.name || "U")[0].toUpperCase()}
                 </div>
               )}
+
               <span className="username-display">
                 {user.username || user.name}
               </span>
@@ -285,7 +274,6 @@ export default function Navbar({
         </div>
       </nav>
 
-      {/* AUTH OVERLAY */}
       {showAuthForm && (
         <div
           className="auth-form-overlay"
@@ -293,19 +281,9 @@ export default function Navbar({
         />
       )}
 
-      {/* LOGIN / SIGNUP FORM */}
       <div className={`auth-form ${showAuthForm ? "open" : ""}`}>
         <form onSubmit={handleFormSubmit} className="drawer-form">
           <h2>{isLoginForm ? "Login" : "Signup"}</h2>
-
-          {!isLoginForm && (
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
-              required
-            />
-          )}
 
           <input
             type="email"
@@ -348,11 +326,9 @@ export default function Navbar({
         </form>
       </div>
 
-      {/* OTP FORM */}
       {showOTPForm && (
         <>
           <div className="auth-form-overlay" />
-          {/* prevent accidental close */}
           <div className="auth-form open">
             <form className="drawer-form">
               <h2>Verify OTP</h2>
@@ -376,7 +352,6 @@ export default function Navbar({
         </>
       )}
 
-      {/* POPUP */}
       {showPopup && (
         <div className="popup-overlay">
           <div className="popup">
