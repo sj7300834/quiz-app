@@ -201,6 +201,29 @@ export default function Navbar({
     }
   };
 
+  /* ================= RESEND OTP ================= */
+  const handleResendOTP = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/resend-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) return setError(data.msg);
+
+      setPopupMessage("OTP resent successfully!");
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 1500);
+    } catch {
+      setError("Failed to resend OTP");
+    }
+  };
+
   return (
     <div>
       <nav className={`navbar ${showNavbar ? "visible" : "hidden"}`}>
@@ -332,6 +355,7 @@ export default function Navbar({
           <div className="auth-form open">
             <form className="drawer-form">
               <h2>Verify OTP</h2>
+
               <input
                 value={otp}
                 maxLength={6}
@@ -339,13 +363,23 @@ export default function Navbar({
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                 placeholder="Enter 6-digit OTP"
               />
+
               {error && <p className="error-message">{error}</p>}
+
               <button
                 type="button"
                 className="form-button"
                 onClick={handleVerifyOTP}
               >
                 Verify OTP
+              </button>
+
+              <button
+                type="button"
+                className="form-button"
+                onClick={handleResendOTP}
+              >
+                Resend OTP
               </button>
             </form>
           </div>
