@@ -17,6 +17,7 @@ export default function Navbar({
   const [isLoginForm, setIsLoginForm] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [showNavbar, setShowNavbar] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -316,13 +317,35 @@ export default function Navbar({
             required
           />
 
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            required
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+              style={{ paddingRight: "45px" }}
+            />
+
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                cursor: "pointer",
+                fontSize: "16px",
+                userSelect: "none",
+              }}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </span>
+          </div>
+
+          <small style={{ color: "#ccc", display: "block", marginTop: "5px" }}>
+            Password must be 8+ chars with upper, lower, number & symbol
+          </small>
 
           {error && <p className="error-message">{error}</p>}
 
@@ -366,19 +389,11 @@ export default function Navbar({
 
               {error && <p className="error-message">{error}</p>}
 
-              <button
-                type="button"
-                className="form-button"
-                onClick={handleVerifyOTP}
-              >
+              <button type="button" className="form-button" onClick={handleVerifyOTP}>
                 Verify OTP
               </button>
 
-              <button
-                type="button"
-                className="form-button"
-                onClick={handleResendOTP}
-              >
+              <button type="button" className="form-button" onClick={handleResendOTP}>
                 Resend OTP
               </button>
             </form>

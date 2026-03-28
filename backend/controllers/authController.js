@@ -30,6 +30,17 @@ const register = async (req, res) => {
       });
     }
 
+    // Password validation
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be 8+ chars, include upper, lower, number and symbol",
+      });
+    }
+
     // Trusted domain validation
     const allowedDomains = ["gmail.com", "outlook.com", "yahoo.com"];
     const domain = email.split("@")[1];
